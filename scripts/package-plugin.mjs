@@ -13,6 +13,11 @@ export function loadPublisherSigningConfig(env) {
   if (!keyId) throw new Error('ATCODEC_PUBLISHER_KEY_ID is required');
   const encodedKey = env.ATCODEC_PUBLISHER_PRIVATE_KEY?.trim();
   if (!encodedKey) throw new Error('ATCODEC_PUBLISHER_PRIVATE_KEY is required');
+  const encodedPublicKey = env.ATCODEC_PUBLISHER_PUBLIC_KEY?.trim();
+  if (!encodedPublicKey) throw new Error('ATCODEC_PUBLISHER_PUBLIC_KEY is required');
+  if (!/^[A-Za-z0-9+/]{43}=$/.test(encodedPublicKey)) {
+    throw new Error('ATCODEC_PUBLISHER_PUBLIC_KEY must be a raw Ed25519 public key');
+  }
 
   let privateKey;
   try {
@@ -22,6 +27,11 @@ export function loadPublisherSigningConfig(env) {
   }
   if (privateKey.asymmetricKeyType !== 'ed25519') {
     throw new Error('ATCODEC_PUBLISHER_PRIVATE_KEY must be an Ed25519 private key');
+  }
+  const derivedPublicKey = createPublicKey(privateKey).export({ format: 'jwk' });
+  const derivedPublicKeyBase64 = Buffer.from(derivedPublicKey.x, 'base64url').toString('base64');
+  if (derivedPublicKeyBase64 !== encodedPublicKey) {
+    throw new Error('ATCODEC_PUBLISHER_PRIVATE_KEY does not match ATCODEC_PUBLISHER_PUBLIC_KEY');
   }
   return { keyId, privateKey };
 }

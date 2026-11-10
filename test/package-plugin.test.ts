@@ -32,9 +32,21 @@ describe('plugin package archive', () => {
     );
 
     const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+    const publicKeyBase64 = Buffer.from(
+      publicKey.export({ format: 'jwk' }).x,
+      'base64url'
+    ).toString('base64');
+    assert.throws(
+      () => loadPublisherSigningConfig({
+        ATCODEC_PUBLISHER_KEY_ID: 'attson-codec-2026-01',
+        ATCODEC_PUBLISHER_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+      }),
+      /ATCODEC_PUBLISHER_PUBLIC_KEY is required/
+    );
     const config = loadPublisherSigningConfig({
       ATCODEC_PUBLISHER_KEY_ID: 'attson-codec-2026-01',
-      ATCODEC_PUBLISHER_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+      ATCODEC_PUBLISHER_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+      ATCODEC_PUBLISHER_PUBLIC_KEY: publicKeyBase64
     });
     assert.equal(config.keyId, 'attson-codec-2026-01');
     assert.deepEqual(createPublicKey(config.privateKey).export({ format: 'jwk' }), publicKey.export({ format: 'jwk' }));
@@ -43,9 +55,20 @@ describe('plugin package archive', () => {
     assert.throws(
       () => loadPublisherSigningConfig({
         ATCODEC_PUBLISHER_KEY_ID: 'attson-codec-2026-01',
-        ATCODEC_PUBLISHER_PRIVATE_KEY: rsa.export({ type: 'pkcs8', format: 'pem' }).toString()
+        ATCODEC_PUBLISHER_PRIVATE_KEY: rsa.export({ type: 'pkcs8', format: 'pem' }).toString(),
+        ATCODEC_PUBLISHER_PUBLIC_KEY: publicKeyBase64
       }),
       /must be an Ed25519 private key/
+    );
+
+    const unrelated = generateKeyPairSync('ed25519');
+    assert.throws(
+      () => loadPublisherSigningConfig({
+        ATCODEC_PUBLISHER_KEY_ID: 'attson-codec-2026-01',
+        ATCODEC_PUBLISHER_PRIVATE_KEY: unrelated.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+        ATCODEC_PUBLISHER_PUBLIC_KEY: publicKeyBase64
+      }),
+      /does not match ATCODEC_PUBLISHER_PUBLIC_KEY/
     );
   });
 
