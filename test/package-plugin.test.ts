@@ -1,26 +1,68 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createPublicKey } from 'node:crypto';
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { createHash, createPublicKey, generateKeyPairSync } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-import { createArchive, createP0SigningKey, createPluginManifest } from '../scripts/package-plugin.mjs';
+import {
+  buildPluginPackage,
+  createArchive,
+  createPluginManifest,
+  loadPublisherSigningConfig,
+  verifyPluginPackage
+} from '../scripts/package-plugin.mjs';
 
 describe('plugin package archive', () => {
+  it('pins the Plugin SDK to the published release tag', async () => {
+    const packageJson = JSON.parse(
+      await readFile(path.resolve(import.meta.dirname, '..', 'package.json'), 'utf8')
+    );
+    assert.equal(
+      packageJson.dependencies['@attson/plugin-sdk'],
+      'github:attsontools/attool-plugin-sdk#v0.1.0-alpha.0'
+    );
+  });
+
+  it('requires a valid Ed25519 publisher signing configuration', () => {
+    assert.throws(
+      () => loadPublisherSigningConfig({}),
+      /ATCODEC_PUBLISHER_KEY_ID is required/
+    );
+
+    const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+    const config = loadPublisherSigningConfig({
+      ATCODEC_PUBLISHER_KEY_ID: 'attson-codec-2026-01',
+      ATCODEC_PUBLISHER_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+    });
+    assert.equal(config.keyId, 'attson-codec-2026-01');
+    assert.deepEqual(createPublicKey(config.privateKey).export({ format: 'jwk' }), publicKey.export({ format: 'jwk' }));
+
+    const rsa = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey;
+    assert.throws(
+      () => loadPublisherSigningConfig({
+        ATCODEC_PUBLISHER_KEY_ID: 'attson-codec-2026-01',
+        ATCODEC_PUBLISHER_PRIVATE_KEY: rsa.export({ type: 'pkcs8', format: 'pem' }).toString()
+      }),
+      /must be an Ed25519 private key/
+    );
+  });
+
   it('uses the platform application name in the manifest', () => {
     const manifest = createPluginManifest('0.1.0', 'linux', 'x86_64', {
       'ui/index.html': 'a'.repeat(64)
-    });
+    }, 'attson-codec-2026-01');
 
     assert.equal(manifest.name, '编码转换');
   });
 
-  it('uses the publisher key trusted by the P0 host', () => {
-    const publicKey = createPublicKey(createP0SigningKey()).export({ format: 'jwk' });
+  it('uses the publisher key selected for the release', () => {
+    const manifest = createPluginManifest('0.1.0', 'linux', 'x86_64', {
+      'ui/index.html': 'a'.repeat(64)
+    }, 'attson-codec-2026-01');
 
-    assert.equal(publicKey.x, '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo');
+    assert.equal(manifest.publisher.keyId, 'attson-codec-2026-01');
   });
 
   it('contains declared files without directory entries', async () => {
@@ -31,11 +73,50 @@ describe('plugin package archive', () => {
     await writeFile(path.join(stage, 'manifest.json'), '{}');
     await writeFile(path.join(stage, 'ui', 'assets', 'app.js'), 'export {};');
 
-    createArchive(stage, output);
+    await createArchive(stage, output);
 
     const entries = execFileSync('unzip', ['-Z', '-1', output], { encoding: 'utf8' })
       .trim()
       .split('\n');
     assert.deepEqual(entries.sort(), ['manifest.json', 'ui/assets/app.js']);
+  });
+
+  it('builds and re-verifies a release package before publishing', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'atcodec-release-'));
+    await mkdir(path.join(root, 'dist-plugin'), { recursive: true });
+    await writeFile(path.join(root, 'dist-plugin', 'index.html'), '<main>codec</main>');
+    await writeFile(path.join(root, 'LICENSE'), 'test license');
+    const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+    const expected = {
+      version: '1.2.3',
+      targetOs: 'linux',
+      targetArch: 'x86_64',
+      publisherKeyId: 'attson-codec-2026-01'
+    } as const;
+
+    const packagePath = await buildPluginPackage({
+      root,
+      ...expected,
+      signing: { keyId: expected.publisherKeyId, privateKey }
+    });
+    assert.equal(path.basename(packagePath), 'AT.Codec_1.2.3_linux_x86_64.atpkg');
+    const manifest = await verifyPluginPackage(packagePath, publicKey, expected);
+    assert.equal(manifest.publisher.keyId, expected.publisherKeyId);
+    assert.equal(
+      manifest.files['ui/index.html'],
+      createHash('sha256')
+        .update(await readFile(path.join(root, 'dist-plugin', 'index.html')))
+        .digest('hex')
+    );
+
+    const extracted = path.join(root, 'tampered');
+    execFileSync('unzip', ['-q', packagePath, '-d', extracted]);
+    await writeFile(path.join(extracted, 'ui', 'index.html'), '<main>tampered</main>');
+    const tamperedPackage = path.join(root, 'AT.Codec_1.2.3_linux_x86_64.atpkg');
+    await createArchive(extracted, tamperedPackage);
+    await assert.rejects(
+      verifyPluginPackage(tamperedPackage, publicKey, expected),
+      /hash mismatch for ui\/index.html/
+    );
   });
 });
