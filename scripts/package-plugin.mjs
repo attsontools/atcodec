@@ -15,6 +15,17 @@ export function createArchive(stage, output) {
   if (zipped.status !== 0) throw new Error('zip failed');
 }
 
+export function createP0SigningKey() {
+  return createPrivateKey({
+    key: {
+      kty: 'OKP', crv: 'Ed25519',
+      d: 'nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A',
+      x: '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo'
+    },
+    format: 'jwk'
+  });
+}
+
 async function main() {
   const root = path.resolve(import.meta.dirname, '..');
   const packageJson = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
@@ -48,16 +59,8 @@ async function main() {
     permissions: ['host.theme.read', 'host.file.save', 'host.notification.show'],
     files
   });
-  const privateKey = createPrivateKey({
-    key: {
-      kty: 'OKP', crv: 'Ed25519',
-      d: 'nWGxne_9WmZMRxVFkYgNRQYr9Wz17zqCxbHXh1QMjgA',
-      x: '11qYAYdk9JX8W0R1F-Xu2gf3yZB-wxpXFYOGG46xQ5s'
-    },
-    format: 'jwk'
-  });
   await writeFile(path.join(stage, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  await writeFile(path.join(stage, 'manifest.sig'), `${signManifest(manifest, privateKey)}\n`);
+  await writeFile(path.join(stage, 'manifest.sig'), `${signManifest(manifest, createP0SigningKey())}\n`);
 
   const output = path.join(artifacts, `AT.Codec_${packageJson.version}_${targetOs}_${targetArch}.atpkg`);
   await rm(output, { force: true });
