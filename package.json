@@ -1,0 +1,30 @@
+{
+  "name": "atcodec",
+  "private": true,
+  "version": "0.1.0-alpha.0",
+  "type": "module",
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 1421",
+    "build": "tsc && vite build",
+    "build:plugin": "tsc && vite build --mode plugin --outDir dist-plugin",
+    "package:plugin": "pnpm build:plugin && node --experimental-strip-types scripts/package-plugin.mjs",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@attson/plugin-sdk": "file:../attool-plugin-sdk",
+    "@tauri-apps/api": "2.12.3",
+    "@tauri-apps/plugin-dialog": "2.7.0",
+    "vue": "3.5.33"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.2",
+    "@vitejs/plugin-vue": "6.0.6",
+    "typescript": "6.0.3",
+    "vite": "8.0.10"
+  }
+}
+
