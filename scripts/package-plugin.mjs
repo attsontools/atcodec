@@ -26,6 +26,21 @@ export function createP0SigningKey() {
   });
 }
 
+export function createPluginManifest(version, targetOs, targetArch, files) {
+  return parseManifest({
+    schemaVersion: 1,
+    appId: 'com.attson.codec',
+    name: '编码转换',
+    version,
+    publisher: { id: 'com.attson', name: 'Attson', keyId: 'attool-p0-test' },
+    target: { os: targetOs, arch: targetArch },
+    hostApi: { min: '1.0.0', max: '1.x' },
+    ui: { entry: 'ui/index.html' },
+    permissions: ['host.theme.read', 'host.file.save', 'host.notification.show'],
+    files
+  });
+}
+
 async function main() {
   const root = path.resolve(import.meta.dirname, '..');
   const packageJson = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
@@ -47,18 +62,7 @@ async function main() {
     if (relative === 'manifest.json' || relative === 'manifest.sig') continue;
     files[relative] = createHash('sha256').update(await readFile(path.join(stage, relative))).digest('hex');
   }
-  const manifest = parseManifest({
-    schemaVersion: 1,
-    appId: 'com.attson.codec',
-    name: 'AT Codec',
-    version: packageJson.version,
-    publisher: { id: 'com.attson', name: 'Attson', keyId: 'attool-p0-test' },
-    target: { os: targetOs, arch: targetArch },
-    hostApi: { min: '1.0.0', max: '1.x' },
-    ui: { entry: 'ui/index.html' },
-    permissions: ['host.theme.read', 'host.file.save', 'host.notification.show'],
-    files
-  });
+  const manifest = createPluginManifest(packageJson.version, targetOs, targetArch, files);
   await writeFile(path.join(stage, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(path.join(stage, 'manifest.sig'), `${signManifest(manifest, createP0SigningKey())}\n`);
 

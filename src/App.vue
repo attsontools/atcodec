@@ -166,8 +166,8 @@ async function exportValue(value: string, name: string) {
   <main class="app">
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark">AC</span>
-        <div><strong>AT Codec</strong><span>编码与摘要工作台</span></div>
+        <span class="brand-mark">编</span>
+        <div><strong>编码转换</strong><span>编码与摘要工作台</span></div>
       </div>
       <div class="top-actions">
         <span class="host-badge">{{ host.mode === 'plugin' ? '平台插件' : '独立应用' }}</span>
@@ -179,7 +179,7 @@ async function exportValue(value: string, name: string) {
 
     <div v-if="connecting" class="center-state">正在连接宿主</div>
     <div v-else-if="connectionError" class="center-state error-state">
-      <strong>无法启动 AT Codec</strong><span>{{ connectionError }}</span>
+      <strong>无法启动编码转换</strong><span>{{ connectionError }}</span>
     </div>
 
     <div v-else class="workspace">

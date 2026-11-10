@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "AT Codec desktop permissions",
+  "description": "编码转换桌面权限",
   "windows": ["main"],
   "permissions": ["core:default", "dialog:default"]
 }

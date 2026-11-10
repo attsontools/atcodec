@@ -15,6 +15,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![write_text_file])
         .run(tauri::generate_context!())
-        .expect("failed to run AT Codec");
+        .expect("failed to run 编码转换");
 }
 

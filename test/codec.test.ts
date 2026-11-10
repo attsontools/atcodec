@@ -17,7 +17,7 @@ import {
 
 describe('shared codec core', () => {
   it('roundtrips text through every reversible codec', () => {
-    const input = '你好 AT Codec';
+    const input = '你好 编码转换';
     assert.equal(base64Decode(base64Encode(input)), input);
     assert.equal(base64Decode(base64Encode(input, true), true), input);
     assert.equal(urlDecode(urlEncode(input)), input);

@@ -1,7 +1,7 @@
 [package]
 name = "atcodec"
 version = "0.1.0-alpha.0"
-description = "AT Codec encoding and digest desktop tool"
+description = "编码转换与摘要桌面工具"
 authors = ["Attson"]
 edition = "2021"
 

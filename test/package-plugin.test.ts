@@ -6,9 +6,17 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 
-import { createArchive, createP0SigningKey } from '../scripts/package-plugin.mjs';
+import { createArchive, createP0SigningKey, createPluginManifest } from '../scripts/package-plugin.mjs';
 
 describe('plugin package archive', () => {
+  it('uses the platform application name in the manifest', () => {
+    const manifest = createPluginManifest('0.1.0', 'linux', 'x86_64', {
+      'ui/index.html': 'a'.repeat(64)
+    });
+
+    assert.equal(manifest.name, '编码转换');
+  });
+
   it('uses the publisher key trusted by the P0 host', () => {
     const publicKey = createPublicKey(createP0SigningKey()).export({ format: 'jwk' });
 
