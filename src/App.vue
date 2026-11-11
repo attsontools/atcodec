@@ -183,7 +183,7 @@ async function exportValue(value: string, name: string) {
     </div>
 
     <div v-else class="workspace">
-      <nav class="tabs" aria-label="编码工具">
+      <nav class="tabs" aria-label="编码转换">
         <button v-for="tab in tabs" :key="tab.id" type="button" :class="{ active: active === tab.id }" @click="active = tab.id">
           <strong>{{ tab.label }}</strong><span>{{ tab.detail }}</span>
         </button>
