@@ -42,6 +42,7 @@ button:hover { border-color: var(--accent); }
 .host-badge, .action-state { padding: 3px 7px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent); font-size: 11px; }
 .icon-button { min-width: 52px; padding: 5px 8px; }
 .workspace { height: calc(100vh - 58px); display: grid; grid-template-columns: 190px minmax(0, 1fr); }
+.app.is-plugin .workspace { height: 100vh; }
 .tabs { padding: 10px; border-right: 1px solid var(--line); background: var(--surface); }
 .tabs button { width: 100%; display: grid; gap: 1px; padding: 9px 10px; border-color: transparent; background: transparent; text-align: left; }
 .tabs button span { color: var(--muted); font-size: 11px; }
@@ -70,6 +71,7 @@ textarea { width: 100%; min-height: 330px; display: block; resize: vertical; pad
 .jwt-grid .panel:last-child { grid-column: 1 / -1; }
 .error-message { padding: 9px 11px; border: 1px solid var(--error); border-radius: var(--radius); color: var(--error); }
 .center-state { min-height: calc(100vh - 58px); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.app.is-plugin .center-state { min-height: 100vh; }
 .error-state { flex-direction: column; gap: 5px; }
 .error-state strong { color: var(--text); }
 @media (max-width: 760px) {
