@@ -163,15 +163,15 @@ async function exportValue(value: string, name: string) {
 </script>
 
 <template>
-  <main class="app">
-    <header class="topbar">
+  <main class="app" :class="{ 'is-plugin': host.mode === 'plugin' }">
+    <header v-if="host.mode === 'standalone'" class="topbar">
       <div class="brand">
         <span class="brand-mark">编</span>
         <div><strong>编码转换</strong><span>编码与摘要工作台</span></div>
       </div>
       <div class="top-actions">
-        <span class="host-badge">{{ host.mode === 'plugin' ? '平台插件' : '独立应用' }}</span>
-        <button v-if="host.mode === 'standalone'" class="icon-button" type="button" title="切换主题" @click="toggleTheme">
+        <span class="host-badge">独立应用</span>
+        <button class="icon-button" type="button" title="切换主题" @click="toggleTheme">
           {{ theme === 'dark' ? 'Light' : 'Dark' }}
         </button>
       </div>
